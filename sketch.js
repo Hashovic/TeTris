@@ -7,7 +7,7 @@ const LONG_INTERVAL = 125;  // For left and right delay
 const INTERVAL = 30;        // Left and right speed
 const ORIG_INTERVAL = 600;  // Original down interval (used for speed up)
 const SPEED_MULT = 40;      // Amount of speed boost
-const NUM_LVL = 10;         // Lines until speed boost
+const NUM_LVL = 1;         // Lines until speed boost
 const DOWN_INTERVAL = 40;   // Down speed
 const GRID_WIDTH = 10;
 const GRID_HEIGHT = 20;
@@ -625,12 +625,15 @@ const tetris2 = p => {
     let left_time = 0;
     let right_time = 0;
     let long_time = 0;
+    let kill_time = 0;
     let dead = [];
     let first_left = true;
     let first_right = true;
+    let first_killed = true;
     let has_switched = false;
     let kill = false;
     let init_centered = false;
+    let kill_timer = false;
 
     // Runs before setup
     p.preload = () => {
@@ -735,6 +738,8 @@ const tetris2 = p => {
         p.textSize(B_SIZE);
         p.textAlign(p.CENTER, p.CENTER);
 
+        auto_interval = ORIG_INTERVAL;
+
     }
 
     // Game loop (Constantly loops)
@@ -770,6 +775,10 @@ const tetris2 = p => {
 
         outline.draw();
         shapey.draw();
+
+        if(kill_timer){
+            kill_delay();
+        }
 
         if(kill){
             for(let block = 0; block < shapey.blocks.length; block++){
@@ -807,6 +816,8 @@ const tetris2 = p => {
             check_lose();
             draw_outline();
 
+            kill_timer = false;
+            first_killed = true;
             kill = false;
         }
         else{
@@ -957,6 +968,8 @@ const tetris2 = p => {
 
         // spacebar (x)
         if (p.keyCode == p.hard_key) {
+            kill_timer = false;
+
             while (check_valid(0)){
                 shapey.mvdwn();
             }
@@ -992,13 +1005,19 @@ const tetris2 = p => {
         // down
 
         if(currentTime - auto_down_time >= auto_interval){
-            if(check_valid(0)) shapey.mvdwn();
+            if(check_valid(0)){
+                shapey.mvdwn();
+                check_delay();
+            }
             auto_down_time = currentTime;
         }
 
         if (p.keyIsDown(Number(p.down_key))){
             if (currentTime - down_time >= DOWN_INTERVAL) {
-                if(check_valid(0)) shapey.mvdwn();
+                if(check_valid(0)){
+                    shapey.mvdwn();
+                    check_delay();
+                }
                 down_time = currentTime;
             }
         }
@@ -1012,6 +1031,7 @@ const tetris2 = p => {
             else if (currentTime - left_time >= INTERVAL && currentTime - long_time >= LONG_INTERVAL) {
                 if (check_valid(1)){
                     shapey.mvleft();
+                    check_delay();
                     draw_outline();
                 }
                 left_time = currentTime;
@@ -1027,6 +1047,7 @@ const tetris2 = p => {
             else if (currentTime - right_time >= INTERVAL && currentTime - long_time >= LONG_INTERVAL) {
                 if (check_valid(2)){
                     shapey.mvright();
+                    check_delay();
                     draw_outline();
                 }
                 right_time = currentTime;
@@ -1040,7 +1061,9 @@ const tetris2 = p => {
         
         for(let pos of future_positions){
             if(pos.y + 1 > GRID_HEIGHT){
-                if(c == 0 && s == shapey){kill = true;}
+                if(c == 0 && s == shapey && !kill_timer){
+                    kill = true;
+                }
                 return false;
             }
             if(pos.x < 0){
@@ -1051,12 +1074,46 @@ const tetris2 = p => {
             }
             for(let i = 0; i < dead.length; i++){
                 if(pos.equals(dead[i].get_pos())){
-                    if(c == 0 && s == shapey){kill = true;}
+                    if(c == 0 && s == shapey && !kill_timer){
+                        kill = true;
+                    }
                     return false;
                 }
             }
         }
         return true;
+    }
+
+    function check_delay(){
+        const future_positions = shapey.future_pos(0);
+
+        for(let pos of future_positions){
+            if(pos.y + 1 > GRID_HEIGHT){
+                kill_timer = true;
+                return true;
+            }
+
+            for(let i = 0; i < dead.length; i++){
+                if(pos.equals(dead[i].get_pos())){
+                    kill_timer = true;
+                    return true;
+                }
+            }
+        }
+        kill_timer = false;
+        first_killed = true;
+        return false;
+    }
+
+    function kill_delay(){
+        currentTime = p.millis();
+        if(first_killed){
+            kill_time = currentTime;
+            first_killed = false;
+        }
+        else if (currentTime - kill_time >= ORIG_INTERVAL) {
+            kill = true;
+        }
     }
 
     // Checks if a line is cleared
