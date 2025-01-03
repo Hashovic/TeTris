@@ -7,7 +7,7 @@ const LONG_INTERVAL = 125;  // For left and right delay
 const INTERVAL = 30;        // Left and right speed
 const ORIG_INTERVAL = 600;  // Original down interval (used for speed up)
 const SPEED_MULT = 40;      // Amount of speed boost
-const NUM_LVL = 1;         // Lines until speed boost
+const NUM_LVL = 10;         // Lines until speed boost
 const DOWN_INTERVAL = 40;   // Down speed
 const GRID_WIDTH = 10;
 const GRID_HEIGHT = 20;
@@ -1106,13 +1106,14 @@ const tetris2 = p => {
     }
 
     function kill_delay(){
-        currentTime = p.millis();
+        const currentTime = p.millis();
+
         if(first_killed){
             kill_time = currentTime;
             first_killed = false;
         }
         else if (currentTime - kill_time >= ORIG_INTERVAL) {
-            kill = true;
+            if(check_delay()) kill = true;
         }
     }
 
