@@ -44,11 +44,14 @@ const tetris = p => {
     let left_time = 0;
     let right_time = 0;
     let long_time = 0;
+    let kill_time = 0;
     let dead = [];
     let first_left = true;
     let first_right = true;
+    let first_killed = true;
     let has_switched = false;
     let kill = false;
+    let kill_timer = false;
 
     // Runs before setup
     p.preload = () => {
@@ -180,6 +183,10 @@ const tetris = p => {
         outline.draw();
         shapey.draw();
 
+        if(kill_timer){
+            kill_delay();
+        }
+
         if(kill){
             for(let block = 0; block < shapey.blocks.length; block++){
                 dead.push(shapey.blocks[block]);
@@ -217,6 +224,8 @@ const tetris = p => {
             check_lose();
             draw_outline();
 
+            kill_timer = false;
+            first_killed = true;
             kill = false;
         }
         else{
@@ -356,6 +365,8 @@ const tetris = p => {
 
         // spacebar (x)
         if (p.keyCode == p.hard_key) {
+            kill_timer = false;
+
             while (check_valid(0)){
                 shapey.mvdwn();
             }
@@ -391,13 +402,19 @@ const tetris = p => {
         // down
 
         if(currentTime - auto_down_time >= auto_interval){
-            if(check_valid(0)) shapey.mvdwn();
+            if(check_valid(0)){
+                shapey.mvdwn();
+                check_delay();
+            }
             auto_down_time = currentTime;
         }
 
         if (p.keyIsDown(Number(p.down_key))){
             if (currentTime - down_time >= DOWN_INTERVAL) {
-                if(check_valid(0)) shapey.mvdwn();
+                if(check_valid(0)){
+                    shapey.mvdwn();
+                    check_delay();
+                }
                 down_time = currentTime;
             }
         }
@@ -411,6 +428,7 @@ const tetris = p => {
             else if (currentTime - left_time >= INTERVAL && currentTime - long_time >= LONG_INTERVAL) {
                 if (check_valid(1)){
                     shapey.mvleft();
+                    check_delay();
                     draw_outline();
                 }
                 left_time = currentTime;
@@ -426,6 +444,7 @@ const tetris = p => {
             else if (currentTime - right_time >= INTERVAL && currentTime - long_time >= LONG_INTERVAL) {
                 if (check_valid(2)){
                     shapey.mvright();
+                    check_delay();
                     draw_outline();
                 }
                 right_time = currentTime;
@@ -439,7 +458,9 @@ const tetris = p => {
         
         for(let pos of future_positions){
             if(pos.y + 1 > GRID_HEIGHT){
-                if(c == 0 && s == shapey){kill = true;}
+                if(c == 0 && s == shapey && !kill_timer){
+                    kill = true;
+                }
                 return false;
             }
             if(pos.x < 0){
@@ -450,12 +471,46 @@ const tetris = p => {
             }
             for(let i = 0; i < dead.length; i++){
                 if(pos.equals(dead[i].get_pos())){
-                    if(c == 0 && s == shapey){kill = true;}
+                    if(c == 0 && s == shapey && !kill_timer){
+                        kill = true;
+                    }
                     return false;
                 }
             }
         }
         return true;
+    }
+
+    function check_delay(){
+        const future_positions = shapey.future_pos(0);
+
+        for(let pos of future_positions){
+            if(pos.y + 1 > GRID_HEIGHT){
+                kill_timer = true;
+                return true;
+            }
+
+            for(let i = 0; i < dead.length; i++){
+                if(pos.equals(dead[i].get_pos())){
+                    kill_timer = true;
+                    return true;
+                }
+            }
+        }
+        kill_timer = false;
+        first_killed = true;
+        return false;
+    }
+
+    function kill_delay(){
+        const currentTime = p.millis();
+        if(first_killed){
+            kill_time = currentTime;
+            first_killed = false;
+        }
+        else if (currentTime - kill_time >= ORIG_INTERVAL) {
+            if(check_delay()) kill = true;
+        }
     }
 
     // Checks if a line is cleared
