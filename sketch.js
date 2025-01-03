@@ -157,6 +157,8 @@ const tetris = p => {
         p.textSize(B_SIZE);
         p.textAlign(p.CENTER, p.CENTER);
 
+        auto_interval = ORIG_INTERVAL;
+
     }
 
     // Game loop (Constantly loops)
@@ -794,7 +796,6 @@ const tetris2 = p => {
         p.textAlign(p.CENTER, p.CENTER);
 
         auto_interval = ORIG_INTERVAL;
-
     }
 
     // Game loop (Constantly loops)
@@ -901,7 +902,7 @@ const tetris2 = p => {
         p.rect(0,0, g_width, p.height);
         p.rectMode(p.CORNERS);
         p.fill(p.color(255,0,0));
-        p.rect(0,p.height,g_width,p.height - (num_garbage * B_SIZE));
+        p.rect(0,p.height,g_width, p.height - (num_garbage * B_SIZE));
         p.pop();
     }
 
