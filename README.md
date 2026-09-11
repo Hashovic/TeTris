@@ -1,6 +1,7 @@
 # TeTris
 ### Creator: Hashim Alfayyadh
 ### Video Demo: https://youtu.be/tt0t9fTbPTI
+### Try it out: https://hashovic.github.io/tetris/
 
 ### Sources:
     - ChatGPT
